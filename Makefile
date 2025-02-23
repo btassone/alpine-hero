@@ -1,4 +1,4 @@
-.PHONY: all build clean test fmt lint run help build-mac build-linux repomix
+.PHONY: all build clean test fmt lint run help build-mac build-linux deps repomix coverage coverage-html coverage-race
 
 # Go parameters
 GOCMD=go
@@ -26,6 +26,9 @@ help:
 	@echo "${YELLOW}make build${NC}       - Build the application for current platform"
 	@echo "${YELLOW}make clean${NC}       - Clean build artifacts"
 	@echo "${YELLOW}make test${NC}        - Run tests"
+	@echo "${YELLOW}make coverage${NC}    - Run tests with coverage analysis"
+	@echo "${YELLOW}make coverage-html${NC} - Generate and open HTML coverage report"
+	@echo "${YELLOW}make coverage-race${NC} - Run tests with race detection and coverage"
 	@echo "${YELLOW}make fmt${NC}         - Format Go code"
 	@echo "${YELLOW}make lint${NC}        - Run linter"
 	@echo "${YELLOW}make run${NC}         - Generate answers.txt file"
@@ -51,10 +54,35 @@ clean:
 	rm -f $(BINARY_MAC)*
 	rm -f answers.txt
 	rm -f repomix-output.txt
+	rm -f coverage.out
+	rm -f coverage.html
 
 # Run tests
 test:
 	$(GOTEST) -v ./...
+
+# Test coverage
+coverage:
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -func=coverage.out
+
+# Generate HTML coverage report
+coverage-html: coverage
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+	@echo "Generated coverage report: coverage.html"
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		open coverage.html; \
+	elif [ "$(shell uname)" = "Linux" ]; then \
+		xdg-open coverage.html 2>/dev/null || echo "Please open coverage.html in your browser"; \
+	else \
+		echo "Please open coverage.html in your browser"; \
+	fi
+
+# Run tests with race detection and coverage
+coverage-race:
+	$(GOTEST) -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	$(GOCMD) tool cover -func=coverage.out
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 
 # Format code
 fmt:
