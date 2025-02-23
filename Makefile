@@ -1,4 +1,4 @@
-.PHONY: all build clean test fmt lint run help
+.PHONY: all build clean test fmt lint run help build-mac build-linux
 
 # Go parameters
 GOCMD=go
@@ -9,6 +9,7 @@ GOGET=$(GOCMD) get
 GORUN=$(GOCMD) run
 BINARY_NAME=alpine-template
 BINARY_UNIX=$(BINARY_NAME)_unix
+BINARY_MAC=$(BINARY_NAME)_mac
 
 # Colors for help output
 YELLOW := \033[1;33m
@@ -22,13 +23,14 @@ help:
 	@echo "Available targets:"
 	@echo "${YELLOW}make help${NC}        - Show this help message"
 	@echo "${YELLOW}make all${NC}         - Run tests and build the application"
-	@echo "${YELLOW}make build${NC}       - Build the application"
+	@echo "${YELLOW}make build${NC}       - Build the application for current platform"
 	@echo "${YELLOW}make clean${NC}       - Clean build artifacts"
 	@echo "${YELLOW}make test${NC}        - Run tests"
 	@echo "${YELLOW}make fmt${NC}         - Format Go code"
 	@echo "${YELLOW}make lint${NC}        - Run linter"
 	@echo "${YELLOW}make run${NC}         - Generate answers.txt file"
 	@echo "${YELLOW}make build-linux${NC} - Cross compile for Linux ARM64 (Raspberry Pi)"
+	@echo "${YELLOW}make build-mac${NC}   - Cross compile for macOS (both AMD64 and ARM64)"
 	@echo "${YELLOW}make deps${NC}        - Install dependencies"
 	@echo "\nExample usage:"
 	@echo "  make build && ./$(BINARY_NAME) > answers.txt"
@@ -45,6 +47,7 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_UNIX)
+	rm -f $(BINARY_MAC)*
 	rm -f answers.txt
 
 # Run tests
@@ -69,6 +72,11 @@ run:
 # Cross compilation for Linux
 build-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) -o $(BINARY_UNIX) -v
+
+# Cross compilation for macOS (both AMD64 and ARM64)
+build-mac:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BINARY_MAC)_amd64 -v
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BINARY_MAC)_arm64 -v
 
 # Install dependencies
 deps:
