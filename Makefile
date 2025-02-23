@@ -1,4 +1,4 @@
-.PHONY: all build clean test fmt lint run help build-mac build-linux
+.PHONY: all build clean test fmt lint run help build-mac build-linux repomix
 
 # Go parameters
 GOCMD=go
@@ -32,6 +32,7 @@ help:
 	@echo "${YELLOW}make build-linux${NC} - Cross compile for Linux ARM64 (Raspberry Pi)"
 	@echo "${YELLOW}make build-mac${NC}   - Cross compile for macOS (both AMD64 and ARM64)"
 	@echo "${YELLOW}make deps${NC}        - Install dependencies"
+	@echo "${YELLOW}make repomix${NC}     - Generate repomix output file"
 	@echo "\nExample usage:"
 	@echo "  make build && ./$(BINARY_NAME) > answers.txt"
 
@@ -49,6 +50,7 @@ clean:
 	rm -f $(BINARY_UNIX)
 	rm -f $(BINARY_MAC)*
 	rm -f answers.txt
+	rm -f repomix-output.txt
 
 # Run tests
 test:
@@ -81,3 +83,7 @@ build-mac:
 # Install dependencies
 deps:
 	$(GOGET) -v ./...
+
+# Generate repomix output
+repomix:
+	repomix
