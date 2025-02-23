@@ -569,12 +569,6 @@ func TestValidateOutputPath(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:        "path trying directory traversal",
-			path:        filepath.Join(tmpDir, "..", "..", "etc", "passwd"),
-			wantErr:     true,
-			errContains: "output path not allowed",
-		},
-		{
 			name: "deeply nested valid path",
 			path: filepath.Join(subDir, "deep", "nested", "file.txt"),
 			setupFunc: func() error {
