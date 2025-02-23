@@ -1,10 +1,19 @@
-# GoLand IDE
-.idea/
-*.iml
-*.iws
-*.ipr
+# Binary files
+alpine-template
+alpine-template_unix
+alpine-template_mac_amd64
+alpine-template_mac_arm64
 
-# Go build and test files
+# Generated files
+answers.txt
+sample-answers.txt
+
+# Mac OS X files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Go specific
 *.exe
 *.exe~
 *.dll
@@ -12,43 +21,35 @@
 *.dylib
 *.test
 *.out
-/vendor/
-/bin/
-/pkg/
-
-# Go workspace file
 go.work
 
-# Build
-_build/
-build/
-dist/
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
 # Debug files
 debug/
-debug.test
-
-# Output of go coverage tool
-*.out
-*.prof
 
 # Dependency directories
 vendor/
 
+# Go workspace file
+go.work
+
 # Environment files
 .env
 .env.local
-.env.*.local
 
-# System files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Test coverage
+coverage.txt
+coverage.html
+
+# Binary output directory
+bin/
+dist/
 
 # Log files
 *.log
-logs/
