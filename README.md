@@ -1,11 +1,11 @@
-# Alpine Template Generator
+# Alpine Hero
 
-[![Go](https://github.com/username/alpine-template/actions/workflows/go.yml/badge.svg)](https://github.com/username/alpine-template/actions/workflows/go.yml)
-[![codecov](https://codecov.io/gh/username/alpine-template/branch/main/graph/badge.svg)](https://codecov.io/gh/username/alpine-template)
-[![Go Report Card](https://goreportcard.com/badge/github.com/username/alpine-template)](https://goreportcard.com/report/github.com/username/alpine-template)
-[![License](https://img.shields.io/github/license/username/alpine-template)](https://github.com/username/alpine-template/blob/main/LICENSE)
-[![Release](https://img.shields.io/github/v/release/username/alpine-template)](https://github.com/username/alpine-template/releases/latest)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/username/alpine-template)](https://github.com/username/alpine-template/blob/main/go.mod)
+[![Go](https://github.com/btassone/alpine-hero/actions/workflows/go.yml/badge.svg)](https://github.com/btassone/alpine-hero/actions/workflows/go.yml)
+[![codecov](https://codecov.io/gh/btassone/alpine-hero/branch/main/graph/badge.svg)](https://codecov.io/gh/btassone/alpine-hero)
+[![Go Report Card](https://goreportcard.com/badge/github.com/btassone/alpine-hero)](https://goreportcard.com/report/github.com/btassone/alpine-hero)
+[![License](https://img.shields.io/github/license/btassone/alpine-hero)](https://github.com/btassone/alpine-hero/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/btassone/alpine-hero)](https://github.com/btassone/alpine-hero/releases/latest)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/btassone/alpine-hero)](https://github.com/btassone/alpine-hero/blob/main/go.mod)
 
 A command-line tool for generating Alpine Linux answer files for automated installation. This tool simplifies the
 process of creating configuration files needed for unattended Alpine Linux installations.

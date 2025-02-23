@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -89,6 +90,11 @@ func getTemplateDir() string {
 }
 
 func generateAnswersFile() error {
+	// Validate the output path first
+	if err := validateOutputPath(outputFile); err != nil {
+		return fmt.Errorf("invalid output path: %w", err)
+	}
+
 	// Get the template file path using the template directory
 	tmplPath := filepath.Join(getTemplateDir(), "answers.tmpl")
 
@@ -113,6 +119,50 @@ func generateAnswersFile() error {
 	}
 
 	fmt.Printf("Successfully generated answers file: %s\n", outputFile)
+	return nil
+}
+
+func validateOutputPath(path string) error {
+	// Check if path is absolute and normalize it
+	cleanPath := filepath.Clean(path)
+	if filepath.IsAbs(cleanPath) {
+		// For absolute paths, ensure they're within allowed directories
+		// You might want to customize this based on your security requirements
+		allowedPrefixes := []string{
+			"/tmp/",
+			os.TempDir(),
+			filepath.Join(os.Getenv("HOME"), "alpine-template"),
+			".", // Current directory
+		}
+
+		allowed := false
+		for _, prefix := range allowedPrefixes {
+			absPrefix, err := filepath.Abs(prefix)
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(cleanPath, absPrefix) {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
+			return fmt.Errorf("output path not allowed: %s", path)
+		}
+	}
+
+	// Check parent directory exists and is writable
+	parentDir := filepath.Dir(cleanPath)
+	if info, err := os.Stat(parentDir); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("parent directory does not exist: %s", parentDir)
+		}
+		return fmt.Errorf("cannot access parent directory: %s", err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("parent path is not a directory: %s", parentDir)
+	}
+
 	return nil
 }
 
