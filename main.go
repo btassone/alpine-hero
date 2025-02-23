@@ -90,24 +90,28 @@ func getTemplateDir() string {
 }
 
 func generateAnswersFile() error {
-	// Validate the output path first
-	if err := validateOutputPath(outputFile); err != nil {
-		return fmt.Errorf("invalid output path: %w", err)
-	}
-
 	// Get the template file path using the template directory
 	tmplPath := filepath.Join(getTemplateDir(), "answers.tmpl")
 
-	// Parse the template
+	// Parse the template first
 	t, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	// Validate the output path before attempting to execute template
+	if err := validateOutputPath(outputFile); err != nil {
+		return err
 	}
 
 	// Create or truncate the output file
 	f, err := os.Create(outputFile)
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	if err := f.Chmod(0600); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("failed to set file permissions: %w", err)
 	}
 	defer func(f *os.File) {
 		_ = f.Close()
@@ -123,43 +127,90 @@ func generateAnswersFile() error {
 }
 
 func validateOutputPath(path string) error {
-	// Check if path is absolute and normalize it
+	// Normalize the path first
 	cleanPath := filepath.Clean(path)
-	if filepath.IsAbs(cleanPath) {
-		// For absolute paths, ensure they're within allowed directories
-		// You might want to customize this based on your security requirements
-		allowedPrefixes := []string{
-			"/tmp/",
-			os.TempDir(),
-			filepath.Join(os.Getenv("HOME"), "alpine-template"),
-			".", // Current directory
+
+	// Get absolute path for validation
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+
+	// Handle path traversal first
+	if strings.Contains(cleanPath, "..") {
+		// Block access to sensitive directories
+		normalizedPath := filepath.ToSlash(absPath) + "/"
+		if strings.Contains(normalizedPath, "/etc/") ||
+			strings.Contains(normalizedPath, "/usr/") ||
+			strings.Contains(normalizedPath, "/boot/") ||
+			strings.Contains(normalizedPath, "/root/") ||
+			(strings.Contains(normalizedPath, "/var/") && !strings.Contains(normalizedPath, "/var/folders/")) {
+			return fmt.Errorf("invalid output path: output path not allowed: %s", path)
+		}
+		return nil
+	}
+
+	// If it's a non-traversing relative path, allow it
+	if !filepath.IsAbs(cleanPath) {
+		return nil
+	}
+
+	// Define allowed directories
+	allowedPrefixes := []string{
+		"/tmp/",
+		os.TempDir(),
+		filepath.Join(os.Getenv("HOME"), "alpine-template"),
+		".", // Current directory
+	}
+
+	// Add support for macOS temporary directories
+	if tempDir := os.Getenv("TMPDIR"); tempDir != "" {
+		allowedPrefixes = append(allowedPrefixes, tempDir)
+	}
+
+	// Check if path matches any allowed prefix
+	isAllowed := false
+	for _, prefix := range allowedPrefixes {
+		absPrefix, err := filepath.Abs(prefix)
+		if err != nil {
+			continue
 		}
 
-		allowed := false
-		for _, prefix := range allowedPrefixes {
-			absPrefix, err := filepath.Abs(prefix)
-			if err != nil {
-				continue
-			}
-			if strings.HasPrefix(cleanPath, absPrefix) {
-				allowed = true
-				break
-			}
-		}
-
-		if !allowed {
-			return fmt.Errorf("output path not allowed: %s", path)
+		if strings.HasPrefix(absPath, absPrefix) {
+			isAllowed = true
+			break
 		}
 	}
 
-	// Check parent directory exists and is writable
-	parentDir := filepath.Dir(cleanPath)
-	if info, err := os.Stat(parentDir); err != nil {
+	// Additional check for temporary directory patterns
+	if !isAllowed {
+		tempPatterns := []string{
+			"/var/folders/", // macOS temp directory pattern
+			"/tmp/",
+		}
+		for _, pattern := range tempPatterns {
+			if strings.HasPrefix(absPath, pattern) {
+				isAllowed = true
+				break
+			}
+		}
+	}
+
+	if !isAllowed {
+		return fmt.Errorf("invalid output path: output path not allowed: %s", path)
+	}
+
+	// Check parent directory exists and is a directory
+	parentDir := filepath.Dir(absPath)
+	info, err := os.Stat(parentDir)
+	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("parent directory does not exist: %s", parentDir)
 		}
-		return fmt.Errorf("cannot access parent directory: %s", err)
-	} else if !info.IsDir() {
+		return fmt.Errorf("cannot access parent directory: %w", err)
+	}
+
+	if !info.IsDir() {
 		return fmt.Errorf("parent path is not a directory: %s", parentDir)
 	}
 
