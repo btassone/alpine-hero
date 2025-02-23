@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          check-latest: true
+
+      - name: Build Binaries
+        run: |
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -o alpine-template_linux_arm64
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -o alpine-template_linux_amd64
+          # macOS ARM64
+          GOOS=darwin GOARCH=arm64 go build -o alpine-template_darwin_arm64
+          # macOS AMD64
+          GOOS=darwin GOARCH=amd64 go build -o alpine-template_darwin_amd64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            alpine-template_linux_arm64
+            alpine-template_linux_amd64
+            alpine-template_darwin_arm64
+            alpine-template_darwin_amd64
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

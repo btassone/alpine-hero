@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var osExit = os.Exit
+
 type AlpineConfig struct {
 	Hostname     string
 	Username     string
@@ -79,9 +81,16 @@ func init() {
 	generateCmd.Flags().StringVarP(&outputFile, "output", "o", "answers.txt", "Output file path")
 }
 
+func getTemplateDir() string {
+	if dir := os.Getenv("TEMPLATE_DIR"); dir != "" {
+		return dir
+	}
+	return "templates"
+}
+
 func generateAnswersFile() error {
-	// Get the template file path
-	tmplPath := filepath.Join("templates", "answers.tmpl")
+	// Get the template file path using the template directory
+	tmplPath := filepath.Join(getTemplateDir(), "answers.tmpl")
 
 	// Parse the template
 	t, err := template.ParseFiles(tmplPath)
@@ -128,10 +137,7 @@ func validateConfig() error {
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		_, fErr := fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		if fErr != nil {
-			return
-		}
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		osExit(1)
 	}
 }
