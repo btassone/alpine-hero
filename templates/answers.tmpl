@@ -1,0 +1,16 @@
+KEYMAPOPTS="{{ .Keymap }} {{ .Keymap }}"
+HOSTNAMEOPTS="-n {{ .Hostname }}"
+INTERFACESOPTS="auto lo
+iface lo inet loopback
+
+auto {{ .NetworkIface }}
+iface {{ .NetworkIface }} inet dhcp
+"
+TIMEZONEOPTS="-z {{ .Timezone }}"
+PROXYOPTS="none"
+APKREPOSOPTS="-f"
+SSHDOPTS="-c openssh"
+NTPOPTS="-c chrony"
+DISKOPTS="-m sys {{ .DiskDevice }}"
+USEROPTS="-a -u -g {{ range $i, $g := .Groups }}{{if $i}},{{end}}{{$g}}{{end}} {{ .Username }}"
+PWUSER="{{ .Password }}"

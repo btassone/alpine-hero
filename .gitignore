@@ -1,0 +1,54 @@
+# GoLand IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Go build and test files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+/bin/
+/pkg/
+
+# Go workspace file
+go.work
+
+# Build
+_build/
+build/
+dist/
+
+# Debug files
+debug/
+debug.test
+
+# Output of go coverage tool
+*.out
+*.prof
+
+# Dependency directories
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
