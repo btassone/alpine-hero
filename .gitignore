@@ -21,7 +21,6 @@ sample-answers.txt
 *.dylib
 *.test
 *.out
-go.work
 
 # IDE specific files
 .idea/
