@@ -61,4 +61,4 @@ jobs:
         with:
           version: latest
           args: --timeout=5m --out-format=colored-line-number
-          skip-build-cache: true  # Try skipping build cache to avoid export data issue
+          skip-build-cache: true
