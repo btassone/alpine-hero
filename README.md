@@ -150,7 +150,8 @@ Before submitting a PR, please ensure:
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the MIT License - see the LICENSE file for details. Copyright (c) 2024 Alpine Hero
+Contributors.
 
 ## Security
 
