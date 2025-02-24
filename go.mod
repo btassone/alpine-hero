@@ -1,4 +1,4 @@
-module alpine-hero
+module github.com/btassone/alpine-hero
 
 go 1.23
 

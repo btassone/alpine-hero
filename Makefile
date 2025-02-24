@@ -8,8 +8,9 @@ GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GORUN=$(GOCMD) run
 BINARY_NAME=alpine-hero
-BINARY_UNIX=$(BINARY_NAME)_unix
-BINARY_MAC=$(BINARY_NAME)_mac
+BINARY_UNIX=$(BINARY_NAME)_linux
+BINARY_MAC=$(BINARY_NAME)_darwin
+MAIN_PATH=./cmd/alpine-hero
 
 # Colors for help output
 YELLOW := \033[1;33m
@@ -31,34 +32,34 @@ help:
 	@echo "${YELLOW}make coverage-race${NC} - Run tests with race detection and coverage"
 	@echo "${YELLOW}make fmt${NC}         - Format Go code"
 	@echo "${YELLOW}make lint${NC}        - Run linter"
-	@echo "${YELLOW}make run${NC}         - Generate answers.txt file"
-	@echo "${YELLOW}make build-linux${NC} - Cross compile for Linux ARM64 (Raspberry Pi)"
-	@echo "${YELLOW}make build-mac${NC}   - Cross compile for macOS (both AMD64 and ARM64)"
+	@echo "${YELLOW}make run${NC}         - Run the application"
+	@echo "${YELLOW}make build-linux${NC} - Cross compile for Linux (ARM64 and AMD64)"
+	@echo "${YELLOW}make build-mac${NC}   - Cross compile for macOS (AMD64 and ARM64)"
 	@echo "${YELLOW}make deps${NC}        - Install dependencies"
 	@echo "${YELLOW}make repomix${NC}     - Generate repomix output file"
 	@echo "\nExample usage:"
-	@echo "  make build && ./$(BINARY_NAME) > answers.txt"
+	@echo "  make build && ./$(BINARY_NAME) generate > answers.txt"
 
 # Build all
 all: test build
 
 # Build the application
-build:
-	$(GOBUILD) -o $(BINARY_NAME) -v
+build: fmt
+	$(GOBUILD) -o $(BINARY_NAME) -v $(MAIN_PATH)
 
 # Clean build files
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
-	rm -f $(BINARY_UNIX)
-	rm -f $(BINARY_MAC)*
+	rm -f $(BINARY_UNIX)_*
+	rm -f $(BINARY_MAC)_*
 	rm -f answers.txt
 	rm -f repomix-output.txt
 	rm -f coverage.out
 	rm -f coverage.html
 
 # Run tests
-test:
+test: fmt
 	$(GOTEST) -v ./...
 
 # Test coverage
@@ -86,27 +87,28 @@ coverage-race:
 
 # Format code
 fmt:
-	go fmt ./...
+	$(GOCMD) fmt ./...
 
 # Run linting
-lint:
+lint: fmt
 	if [ ! -f $(GOPATH)/bin/golangci-lint ]; then \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin; \
 	fi
 	golangci-lint run
 
-# Generate answers file
-run:
-	$(GORUN) main.go > answers.txt
+# Run the application
+run: build
+	./$(BINARY_NAME) generate
 
 # Cross compilation for Linux
-build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) -o $(BINARY_UNIX) -v
+build-linux: fmt
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) -o $(BINARY_UNIX)_arm64 -v $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX)_amd64 -v $(MAIN_PATH)
 
-# Cross compilation for macOS (both AMD64 and ARM64)
-build-mac:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BINARY_MAC)_amd64 -v
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BINARY_MAC)_arm64 -v
+# Cross compilation for macOS
+build-mac: fmt
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BINARY_MAC)_amd64 -v $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BINARY_MAC)_arm64 -v $(MAIN_PATH)
 
 # Install dependencies
 deps:
