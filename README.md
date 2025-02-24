@@ -148,11 +148,6 @@ Before submitting a PR, please ensure:
 - Linter shows no issues (`make lint`)
 - Test coverage remains high (`make coverage`)
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. Copyright (c) 2024 Alpine Hero
-Contributors.
-
 ## Security
 
 - Default configuration values are provided for demonstration only
