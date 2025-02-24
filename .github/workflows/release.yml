@@ -5,11 +5,16 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write  # Explicitly grant write permission for releases
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -45,5 +50,6 @@ jobs:
             alpine-template_darwin_arm64
             alpine-template_darwin_amd64
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}  # Explicitly specify token
+          draft: false
+          prerelease: false
