@@ -1,8 +1,11 @@
 linters-settings:
   gofmt:
     simplify: true
-  govet:
-    check-shadowing: true
+
+issues:
+  exclude-dirs:
+    - vendor
+  max-same-issues: 0
 
 linters:
   disable-all: true
@@ -14,14 +17,9 @@ linters:
     - ineffassign
     - unused
     - errcheck
+    - shadow  # Replacing check-shadowing
 
 run:
   timeout: 5m
-  skip-dirs:
-    - vendor
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
+  allow-parallel-runners: true
+  go: '1.23'
