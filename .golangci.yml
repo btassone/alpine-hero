@@ -17,7 +17,6 @@ linters:
     - ineffassign
     - unused
     - errcheck
-    - shadow  # Replacing check-shadowing
 
 run:
   timeout: 5m
