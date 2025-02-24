@@ -7,7 +7,7 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GORUN=$(GOCMD) run
-BINARY_NAME=alpine-template
+BINARY_NAME=alpine-hero
 BINARY_UNIX=$(BINARY_NAME)_unix
 BINARY_MAC=$(BINARY_NAME)_mac
 

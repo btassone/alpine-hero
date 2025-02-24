@@ -33,7 +33,7 @@ process of creating configuration files needed for unattended Alpine Linux insta
 
 ### From Release
 
-Download the latest release from the [releases page](https://github.com/username/alpine-template/releases/latest) for
+Download the latest release from the [releases page](https://github.com/username/alpine-hero/releases/latest) for
 your platform.
 
 ### From Source
@@ -56,7 +56,7 @@ make build-mac    # For macOS (both AMD64 and ARM64)
 Generate an answer file with default settings:
 
 ```bash
-./alpine-template generate
+./alpine-hero generate
 ```
 
 ### Custom Configuration
@@ -64,7 +64,7 @@ Generate an answer file with default settings:
 Specify custom settings using command-line flags:
 
 ```bash
-./alpine-template generate \
+./alpine-hero generate \
   --hostname myhostname \
   --username myuser \
   --password mypassword \
