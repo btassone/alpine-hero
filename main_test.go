@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -694,6 +695,247 @@ func TestValidateOutputPathWithPermissions(t *testing.T) {
 				if !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("validateOutputPath() error = %v, want error containing %q", err, tt.errContains)
 				}
+			}
+		})
+	}
+}
+
+func TestValidateSSHKey(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "alpine-sshkey-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Test cases
+	tests := []struct {
+		name     string
+		keyData  string
+		wantErr  bool
+		errMsg   string
+		setup    func(string) string
+		cleanup  func()
+		skipRoot bool
+	}{
+		{
+			name:    "valid ssh-rsa key",
+			keyData: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0g+ZTxC test@example.com",
+			wantErr: false,
+		},
+		{
+			name:    "valid ssh-ed25519 key",
+			keyData: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKrExpXw7vJ4dBU test@example.com",
+			wantErr: false,
+		},
+		{
+			name:    "invalid key format",
+			keyData: "invalid-key-data",
+			wantErr: true,
+			errMsg:  "invalid SSH public key format",
+		},
+		{
+			name:    "empty key file",
+			keyData: "",
+			wantErr: true,
+			errMsg:  "invalid SSH public key format",
+		},
+		{
+			name:    "non-existent key file",
+			setup:   func(dir string) string { return filepath.Join(dir, "nonexistent.pub") },
+			wantErr: true,
+			errMsg:  "failed to read SSH key file",
+		},
+		{
+			name:    "no read permission",
+			keyData: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0g+ZTxC test@example.com",
+			setup: func(dir string) string {
+				path := filepath.Join(dir, "noperm.pub")
+				if err := os.WriteFile(path, []byte("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0g+ZTxC test@example.com"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Chmod(path, 0000); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			cleanup: func() {
+				// Restore permissions for cleanup
+				path := filepath.Join(tmpDir, "noperm.pub")
+				_ = os.Chmod(path, 0644)
+			},
+			wantErr:  true,
+			errMsg:   "failed to read SSH key file",
+			skipRoot: true, // Skip this test when running as root
+		},
+		{
+			name: "directory instead of file",
+			setup: func(dir string) string {
+				path := filepath.Join(dir, "keydir")
+				if err := os.Mkdir(path, 0755); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			wantErr: true,
+			errMsg:  "failed to read SSH key file",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.skipRoot && os.Getuid() == 0 {
+				t.Skip("Skipping test when running as root")
+			}
+
+			// Setup key file path
+			var keyPath string
+			if tt.setup != nil {
+				keyPath = tt.setup(tmpDir)
+			} else {
+				keyPath = filepath.Join(tmpDir, "test.pub")
+				err := os.WriteFile(keyPath, []byte(tt.keyData), 0644)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Run cleanup if provided
+			if tt.cleanup != nil {
+				defer tt.cleanup()
+			}
+
+			// Create test config
+			testConfig := AlpineConfig{
+				Hostname:   "test-host",
+				Username:   "testuser",
+				Password:   "testpass",
+				DiskDevice: "/dev/sda",
+				SSHKey:     keyPath,
+			}
+
+			// Run the test
+			config = testConfig
+			err := validateConfig()
+
+			// Check results
+			if tt.wantErr {
+				if err == nil {
+					t.Error("validateConfig() expected error but got nil")
+					return
+				}
+				if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("validateConfig() error = %v, want error containing %v", err, tt.errMsg)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("validateConfig() unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestSSHKeyGenerateAnswersFile(t *testing.T) {
+	// Create temporary directories
+	tmpDir, err := os.MkdirTemp("", "alpine-template-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	templatesDir := filepath.Join(tmpDir, "templates")
+	if err := os.Mkdir(templatesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create test template
+	testTemplate := `KEYMAPOPTS="{{ .Keymap }} {{ .Keymap }}"
+HOSTNAMEOPTS="-n {{ .Hostname }}"
+USEROPTS="-a -u -g {{ range $i, $g := .Groups }}{{if $i}},{{end}}{{$g}}{{end}} {{ .Username }}"
+PWUSER="{{ .Password }}"
+{{- if .SSHKey }}
+SSHKEY="{{ .SSHKey }}"
+{{- end }}`
+
+	if err := os.WriteFile(filepath.Join(templatesDir, "answers.tmpl"), []byte(testTemplate), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create test SSH key
+	sshKeyPath := filepath.Join(tmpDir, "test.pub")
+	testKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0g+ZTxC test@example.com"
+	if err := os.WriteFile(sshKeyPath, []byte(testKey), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name        string
+		config      AlpineConfig
+		wantSSHKey  bool
+		checkOutput func(string) error
+	}{
+		{
+			name: "with ssh key",
+			config: AlpineConfig{
+				Hostname:   "test-host",
+				Username:   "testuser",
+				Password:   "testpass",
+				DiskDevice: "/dev/sda",
+				SSHKey:     sshKeyPath,
+			},
+			wantSSHKey: true,
+			checkOutput: func(content string) error {
+				if !strings.Contains(content, "SSHKEY=") {
+					return fmt.Errorf("SSH key not found in generated file")
+				}
+				return nil
+			},
+		},
+		{
+			name: "without ssh key",
+			config: AlpineConfig{
+				Hostname:   "test-host",
+				Username:   "testuser",
+				Password:   "testpass",
+				DiskDevice: "/dev/sda",
+			},
+			wantSSHKey: false,
+			checkOutput: func(content string) error {
+				if strings.Contains(content, "SSHKEY=") {
+					return fmt.Errorf("unexpected SSH key found in generated file")
+				}
+				return nil
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up environment
+			if err := os.Setenv("TEMPLATE_DIR", templatesDir); err != nil {
+				t.Fatal(err)
+			}
+			defer os.Unsetenv("TEMPLATE_DIR")
+
+			// Set output file
+			outputFile = filepath.Join(tmpDir, "test-answers.txt")
+
+			// Run test
+			config = tt.config
+			if err := generateAnswersFile(); err != nil {
+				t.Fatalf("generateAnswersFile() error = %v", err)
+			}
+
+			// Read generated file
+			content, err := os.ReadFile(outputFile)
+			if err != nil {
+				t.Fatalf("Failed to read generated file: %v", err)
+			}
+
+			// Check output
+			if err := tt.checkOutput(string(content)); err != nil {
+				t.Error(err)
 			}
 		})
 	}

@@ -21,6 +21,7 @@ type AlpineConfig struct {
 	NetworkIface string
 	DiskDevice   string
 	Groups       []string
+	SSHKey       string
 }
 
 var (
@@ -79,6 +80,7 @@ func init() {
 	generateCmd.Flags().StringVarP(&config.NetworkIface, "interface", "i", config.NetworkIface, "Network interface to configure")
 	generateCmd.Flags().StringVarP(&config.DiskDevice, "disk", "d", config.DiskDevice, "Disk device for installation")
 	generateCmd.Flags().StringSliceVar(&config.Groups, "groups", config.Groups, "User groups (comma-separated)")
+	generateCmd.Flags().StringVar(&config.SSHKey, "ssh-key", "", "Path to SSH public key file")
 	generateCmd.Flags().StringVarP(&outputFile, "output", "o", "answers.txt", "Output file path")
 }
 
@@ -230,6 +232,15 @@ func validateConfig() error {
 	}
 	if config.DiskDevice == "" {
 		return fmt.Errorf("disk device cannot be empty")
+	}
+	if config.SSHKey != "" {
+		keyData, err := os.ReadFile(config.SSHKey)
+		if err != nil {
+			return fmt.Errorf("failed to read SSH key file: %w", err)
+		}
+		if !strings.HasPrefix(string(keyData), "ssh-") {
+			return fmt.Errorf("invalid SSH public key format")
+		}
 	}
 
 	fmt.Println("Configuration validation passed!")

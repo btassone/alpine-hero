@@ -14,3 +14,6 @@ NTPOPTS="-c chrony"
 DISKOPTS="-m sys {{ .DiskDevice }}"
 USEROPTS="-a -u -g {{ range $i, $g := .Groups }}{{if $i}},{{end}}{{$g}}{{end}} {{ .Username }}"
 PWUSER="{{ .Password }}"
+{{- if .SSHKey }}
+SSHKEY="{{ .SSHKey }}"
+{{- end }}
