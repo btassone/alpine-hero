@@ -485,7 +485,12 @@ func TestValidateOutputPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(tmpDir)
 
 	// Create a subdirectory in temp directory
 	subDir := filepath.Join(tmpDir, "subdir")
@@ -646,7 +651,12 @@ func TestValidateOutputPathWithPermissions(t *testing.T) {
 	if err := os.Mkdir(noAccessDir, 0000); err != nil {
 		t.Fatalf("Failed to create noaccess directory: %v", err)
 	}
-	defer os.Chmod(noAccessDir, 0755) // Ensure we can clean up
+	defer func(name string, mode os.FileMode) {
+		err := os.Chmod(name, mode)
+		if err != nil {
+			t.Errorf("Failed to set file permissions: %v", err)
+		}
+	}(noAccessDir, 0755) // Ensure we can clean up
 
 	tests := []struct {
 		name        string
