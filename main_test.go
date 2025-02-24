@@ -706,7 +706,12 @@ func TestValidateSSHKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Errorf("Failed to clean up temp directory: %v", err)
+		}
+	}(tmpDir)
 
 	// Test cases
 	tests := []struct {
@@ -842,7 +847,12 @@ func TestSSHKeyGenerateAnswersFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(tmpDir)
 
 	templatesDir := filepath.Join(tmpDir, "templates")
 	if err := os.Mkdir(templatesDir, 0755); err != nil {
@@ -916,7 +926,12 @@ SSHKEY="{{ .SSHKey }}"
 			if err := os.Setenv("TEMPLATE_DIR", templatesDir); err != nil {
 				t.Fatal(err)
 			}
-			defer os.Unsetenv("TEMPLATE_DIR")
+			defer func() {
+				err := os.Unsetenv("TEMPLATE_DIR")
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
 
 			// Set output file
 			outputFile = filepath.Join(tmpDir, "test-answers.txt")
