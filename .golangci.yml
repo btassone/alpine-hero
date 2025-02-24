@@ -1,6 +1,4 @@
 linters:
-  disable:
-    - goanalysis_metalinter  # Disable this problematic linter
   enable:
     - gofmt
     - govet
@@ -8,6 +6,8 @@ linters:
     - gosimple
     - ineffassign
     - unused
+    - errcheck
+    - typecheck
 
 run:
   timeout: 5m
@@ -17,4 +17,4 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
-        - gosec  # Exclude security checks for test files
+        - gosec
