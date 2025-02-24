@@ -1,12 +1,3 @@
-linters-settings:
-  gofmt:
-    simplify: true
-
-issues:
-  exclude-dirs:
-    - vendor
-  max-same-issues: 0
-
 linters:
   disable-all: true
   enable:
@@ -18,7 +9,13 @@ linters:
     - unused
     - errcheck
 
+issues:
+  exclude-dirs:
+    - vendor
+  max-same-issues: 0
+  exclude-use-default: false
+
 run:
   timeout: 5m
   allow-parallel-runners: true
-  go: '1.23'
+  modules-download-mode: readonly
