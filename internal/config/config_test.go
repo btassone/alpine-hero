@@ -236,8 +236,14 @@ func TestConfig_ValidateWithPermissions(t *testing.T) {
 	// Ensure cleanup happens even if the test fails
 	defer func() {
 		// Make sure we can delete everything by restoring write permissions
-		os.Chmod(tmpDir, 0755)
-		os.RemoveAll(tmpDir)
+		err := os.Chmod(tmpDir, 0755)
+		if err != nil {
+			return
+		}
+		lErr := os.RemoveAll(tmpDir)
+		if lErr != nil {
+			return
+		}
 	}()
 
 	// Create the directory for our read-only test

@@ -45,7 +45,12 @@ func (g *Generator) Generate() error {
 		_ = f.Close()
 		return fmt.Errorf("failed to set file permissions: %w", err)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Printf("failed to close output file: %v\n", err)
+		}
+	}(f)
 
 	if err := t.Execute(f, g.config); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)

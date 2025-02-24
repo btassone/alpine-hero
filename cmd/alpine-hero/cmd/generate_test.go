@@ -76,8 +76,14 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 				t.Fatal(err)
 			}
 			defer func() {
-				tmpFile.Close()
-				os.Remove(tmpFile.Name())
+				err := tmpFile.Close()
+				if err != nil {
+					return
+				}
+				fErr := os.Remove(tmpFile.Name())
+				if fErr != nil {
+					return
+				}
 			}()
 
 			// Create a pipe for stderr
