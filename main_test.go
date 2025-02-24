@@ -501,8 +501,11 @@ func TestValidateOutputPath(t *testing.T) {
 
 	// Create a directory with no write permissions
 	noWriteDir := filepath.Join(tmpDir, "no-write")
-	if err := os.Mkdir(noWriteDir, 0555); err != nil {
+	if err := os.Mkdir(noWriteDir, 0755); err != nil {
 		t.Fatalf("Failed to create no-write directory: %v", err)
+	}
+	if err := os.Chmod(noWriteDir, 0555); err != nil {
+		t.Fatalf("Failed to set directory permissions: %v", err)
 	}
 
 	// Get absolute paths for test directories
@@ -626,7 +629,12 @@ func TestValidateOutputPathWithPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		err := os.RemoveAll(tmpDir)
+		if err != nil {
+			t.Errorf("Failed to clean up temp directory: %v", err)
+		}
+	}()
 
 	// Create directories with different permissions
 	readOnlyDir := filepath.Join(tmpDir, "readonly")
