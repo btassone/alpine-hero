@@ -248,8 +248,11 @@ func validateConfig() error {
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	if pErr := rootCmd.Execute(); pErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Error: %v\n", pErr)
+		if err != nil {
+			return
+		}
 		osExit(1)
 	}
 }
