@@ -61,7 +61,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
-          version: v1.64.5  # Using a known good version
-          args: --timeout=5m
+          version: v1.64.5
+          args: --timeout=5m --out-format=colored-line-number
           skip-pkg-cache: true
           skip-build-cache: true
