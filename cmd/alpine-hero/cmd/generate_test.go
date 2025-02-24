@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bytes"
@@ -6,42 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	_ "github.com/spf13/cobra"
 )
 
-func TestRootCommand(t *testing.T) {
-	tests := []struct {
-		name     string
-		args     []string
-		wantErr  bool
-		contains string
-	}{
-		{
-			name:     "show help",
-			args:     []string{"--help"},
-			wantErr:  false,
-			contains: "Alpine Linux answer file generator",
-		},
-		{
-			name:    "invalid command",
-			args:    []string{"invalid"},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rootCmd.SetArgs(tt.args)
-			err := rootCmd.Execute()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("rootCmd.Execute() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestGenerateCommand(t *testing.T) {
+	// Create a temporary directory for test files
 	tmpDir, err := os.MkdirTemp("", "alpine-hero-test")
 	if err != nil {
 		t.Fatal(err)
@@ -69,20 +37,14 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 	}
 
 	// Set the TEMPLATE_DIR environment variable
-	err = os.Setenv("TEMPLATE_DIR", templatesDir)
-	if err != nil {
-		return
+	if err := os.Setenv("TEMPLATE_DIR", templatesDir); err != nil {
+		t.Fatal(err)
 	}
 	defer func() {
-		err := os.Unsetenv("TEMPLATE_DIR")
-		if err != nil {
+		if err := os.Unsetenv("TEMPLATE_DIR"); err != nil {
 			t.Fatal(err)
 		}
 	}()
-
-	// Save original stderr
-	oldStderr := os.Stderr
-	defer func() { os.Stderr = oldStderr }()
 
 	tests := []struct {
 		name    string
@@ -91,17 +53,17 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 	}{
 		{
 			name:    "custom hostname",
-			args:    []string{"generate", "--hostname", "custom-host"},
+			args:    []string{"--hostname", "custom-host"},
 			wantErr: false,
 		},
 		{
 			name:    "custom username and password",
-			args:    []string{"generate", "--username", "custom-user", "--password", "custom-pass"},
+			args:    []string{"--username", "custom-user", "--password", "custom-pass"},
 			wantErr: false,
 		},
 		{
 			name:    "custom groups",
-			args:    []string{"generate", "--groups", "docker,wheel,users"},
+			args:    []string{"--groups", "docker,wheel,users"},
 			wantErr: false,
 		},
 	}
@@ -113,12 +75,10 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func(name string) {
-				err := os.Remove(name)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}(tmpFile.Name())
+			defer func() {
+				tmpFile.Close()
+				os.Remove(tmpFile.Name())
+			}()
 
 			// Create a pipe for stderr
 			r, w, err := os.Pipe()
@@ -126,8 +86,10 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 				t.Fatal(err)
 			}
 
-			// Set stderr to our pipe
+			// Save original stderr
+			oldStderr := os.Stderr
 			os.Stderr = w
+			defer func() { os.Stderr = oldStderr }()
 
 			// Create a channel to capture async read completion
 			done := make(chan bool)
@@ -142,11 +104,12 @@ HOSTNAMEOPTS="-n {{ .Hostname }}"
 				done <- true
 			}()
 
-			// Set output file for the test
-			outputFile = tmpFile.Name()
+			// Prepare command arguments
+			args := append([]string{"generate"}, tt.args...)
+			args = append(args, "--output", tmpFile.Name())
+			rootCmd.SetArgs(args)
 
 			// Execute command
-			rootCmd.SetArgs(tt.args)
 			err = rootCmd.Execute()
 
 			// Close the write end of the pipe

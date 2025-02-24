@@ -19,6 +19,14 @@ NC := \033[0m # No Color
 # Default target when just running 'make'
 .DEFAULT_GOAL := help
 
+VERSION := $(shell git describe --tags --always --dirty)
+BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+COMMIT_HASH := $(shell git rev-parse HEAD)
+
+LDFLAGS := -X github.com/btassone/alpine-hero/cmd/alpine-hero/cmd.Version=$(VERSION) \
+           -X github.com/btassone/alpine-hero/cmd/alpine-hero/cmd.BuildTime=$(BUILD_TIME) \
+           -X github.com/btassone/alpine-hero/cmd/alpine-hero/cmd.CommitHash=$(COMMIT_HASH)
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -45,7 +53,7 @@ all: test build
 
 # Build the application
 build: fmt
-	$(GOBUILD) -o $(BINARY_NAME) -v $(MAIN_PATH)
+	$(GOBUILD) -ldflags "$(LDFLAGS)" -o $(BINARY_NAME) -v $(MAIN_PATH)
 
 # Clean build files
 clean:
