@@ -1,4 +1,11 @@
+linters-settings:
+  gofmt:
+    simplify: true
+  govet:
+    check-shadowing: true
+
 linters:
+  disable-all: true
   enable:
     - gofmt
     - govet
@@ -7,11 +14,11 @@ linters:
     - ineffassign
     - unused
     - errcheck
-    - typecheck
 
 run:
   timeout: 5m
-  modules-download-mode: readonly
+  skip-dirs:
+    - vendor
 
 issues:
   exclude-rules:
